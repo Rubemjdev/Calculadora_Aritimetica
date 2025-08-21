@@ -1,12 +1,15 @@
 <script setup>
 import 'bootstrap/dist/css/bootstrap.min.css'
-import { computed, reactive } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 
 const estado = reactive({
   numero1: '',
   numero2: '',
   operacao: 'soma',
 })
+
+const tempoRestante = ref(10);
+let timerId = null;
 
 const resultado = computed(() => {
   const { numero1, numero2, operacao } = estado;
@@ -22,6 +25,41 @@ const resultado = computed(() => {
       return numero1 / numero2;
     default:
       return 0;
+  }
+});
+
+const zerarCampos = () => {
+  estado.numero1 = '';
+  estado.numero2 = '';
+  estado.operacao = 'soma';
+}
+
+const iniciarTemporizador = () => {
+  if(timerId) {
+    clearInterval(timerId);
+  }
+  tempoRestante.value = 10;
+  timerId = setInterval(() => {
+    tempoRestante.value--;
+
+    if(tempoRestante.value <=0) {
+      zerarCampos();
+      clearInterval(timerId);
+    }
+  }, 1000);
+}
+
+const reiniciarTemporizador = () => {
+  iniciarTemporizador();
+}
+
+onMounted(() => {
+  iniciarTemporizador();
+});
+
+onUnmounted(() => {
+  if(timerId) {
+    clearInterval(timerId);
   }
 });
 
@@ -42,7 +80,7 @@ const resultado = computed(() => {
             <label class="form-label" for="operacao">
               Selecione a Operação:
             </label>
-            <select id="operacao" class="form-select" v-model="estado.operacao">
+            <select id="operacao" class="form-select" @change="reiniciarTemporizador" v-model="estado.operacao">
               <option value="soma">Soma</option>
               <option value="sub">Subtração</option>
               <option value="multi">Multiplicação</option>
@@ -54,17 +92,21 @@ const resultado = computed(() => {
       <div class="row">
         <div class="col-md-4 mb-3">
           <label for="numero1" class="form-label">Número 1</label>
-          <input type="number" id="numero1" v-model.number="estado.numero1" class="form-control" placeholder="Digite o primeiro número">
+          <input type="number" @input="reiniciarTemporizador" id="numero1" v-model.number="estado.numero1" class="form-control" placeholder="Digite o primeiro número">
         </div>
         <div class="col-md-4 mb-3">
           <label for="numero2" class="form-label">Número 2</label>
-          <input type="number" id="numero2" v-model.number="estado.numero2" class="form-control" placeholder="Digite o segundo número">
+          <input type="number" id="numero2" @input="reiniciarTemporizador" v-model.number="estado.numero2" class="form-control" placeholder="Digite o segundo número">
         </div>
 
         <div class="col-md-4 mb-3">
           <label for="resposta" class="form-label">Resposta</label>
           <input type="number" id="resposta" :value="resultado" class="form-control" readonly placeholder="Seu resultado é: ">
         </div>
+      </div>
+      <div class="temporizador text-center mt-4">
+        <p>Tempo Restante</p>
+        <span class="badge bg-danger">{{ tempoRestante }}</span>
       </div>
     </div>
   </div>
